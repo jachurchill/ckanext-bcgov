@@ -1,1 +1,12 @@
-checkup.config = {}; // You MUST fill this out! Use config_template.js as a starting point.
+checkup.config = {
+	"timeframe": 1 * time.Day,
+	"refresh_interval": 60,
+	"storage": {
+		"url": "https://bcdc-checkup.data.gov.bc.ca"
+	},
+	"status_text": {
+		"healthy": "Situation Normal",
+		"degraded": "Degraded Service",
+		"down": "Service Disruption"
+	}
+};
