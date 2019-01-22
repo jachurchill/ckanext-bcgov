@@ -8,7 +8,8 @@ import ckan.lib.helpers
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
 import ckan.logic as logic
-from ckan.common import  (c, request)
+from ckan.common import (c, request)
+import ckan.authz as authz
 from webhelpers.html import literal
 import json
 import urllib2
@@ -356,9 +357,47 @@ def get_dataset_type(id):
         abort(404, _('The dataset {id} could not be found.').format(id=id))
 
 
+def is_current_user_admin():
+    '''
+    Returns whether or not the user is an admin in the master org
+    '''
+    context = {'model': model, 'session': model.Session,
+               'user': c.user or c.author, 'auth_user_obj': c.userobj}
+    user = context['user']
+
+    user_object = context.get('auth_user_obj')
+
+    # Sysadmin user has all the privileges
+    if user_object and user_object.sysadmin:
+        return True
+
+    if authz.has_user_permission_for_group_or_org('group_id', user, 'admin'):
+        return True
+
+    return False
+
+
+def get_possible_parent_orgs():
+    '''
+    Returns the list of top-level organizations and master organization.
+    '''
+    context = {'model': model, 'session': model.Session,
+               'user': c.user or c.author, 'auth_user_obj': c.userobj}
+    org_model = context['model']
+
+    # Get the list of all groups of type "organization" that have no parents.
+    top_level_orgs = org_model.Group.get_top_level_groups(type="organization")
+    for top_org in top_level_orgs:
+        if top_org.name == 'BC Data Catalogue':
+            return top_org.children.insert(0, top_org)
+
+    return top_level_orgs
+
+
 def get_organizations():
     '''
-    Returns the list of top-level organizations (Organizations that don't have any parent organizations).
+    Returns the list of top-level organizations
+    (Organizations that don't have any parent organizations except master org).
     '''
     context = {'model': model, 'session': model.Session,
                'user': c.user or c.author, 'auth_user_obj': c.userobj}
@@ -366,6 +405,9 @@ def get_organizations():
 
     #Get the list of all groups of type "organization" that have no parents.
     top_level_orgs = org_model.Group.get_top_level_groups(type="organization")
+    for top_org in top_level_orgs:
+        if top_org.name == 'BC Data Catalogue':
+            return top_org.children
 
     return top_level_orgs
 

@@ -6,6 +6,7 @@ import ckan.authz as authz
 import ckan.logic.auth as logic_auth
 
 from ckan.logic.auth.create import _check_group_auth
+from ckanext.bcgov.util.helpers import is_current_user_admin
 
 from ckan.common import _
 
@@ -17,15 +18,15 @@ def package_create(context, data_dict=None):
 
     user_object = context.get('auth_user_obj')
 
-    #Sysadmin user has all the previliges 
-    if user_object and user_object.sysadmin :
+    # Sysadmin user has all the previliges
+    if user_object and user_object.sysadmin:
         {'success': True}
 
-    #Do not authorize anonymous users
+    # Do not authorize anonymous users
     if authz.auth_is_anon_user(context):
         return {'success': False, 'msg': _('User %s not authorized to create packages') % user}
     
-    #Check if the user has the editor or admin role in some org/suborg
+    # Check if the user has the editor or admin role in some org/suborg
     check1 = all(authz.check_config_permission(p) for p in (
         'create_dataset_if_not_in_organization',
         'create_unowned_dataset',
@@ -48,3 +49,13 @@ def package_create(context, data_dict=None):
 
     return {'success': True}
 
+
+@logic.auth_allow_anonymous_access
+def organization_create(context, data_dict=None):
+    user = context['user']
+
+    # Check if the user has the admin role in some org/suborg
+    if is_current_user_admin():
+        return {'success': True}
+
+    return {'success': False, 'msg': _('User %s not authorized to create packages') % user}

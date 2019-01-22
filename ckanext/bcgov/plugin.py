@@ -41,6 +41,7 @@ from ckanext.bcgov.util.helpers import (
     get_sectors_list,
     get_dataset_type,
     get_organizations,
+    get_possible_parent_orgs,
     get_organization_title,
     get_espg_id,
     get_edc_org,
@@ -62,7 +63,8 @@ from ckanext.bcgov.util.helpers import (
     get_ofi_resources,
     get_non_ofi_resources,
     get_pow_config,
-    log_this)
+    log_this,
+    is_current_user_admin)
 
 
 abort = base.abort
@@ -94,6 +96,7 @@ class SchemaPlugin(plugins.SingletonPlugin):
             "dataset_type": get_dataset_type,
             "edc_tags": get_edc_tags,
             "edc_orgs": get_organizations,
+            "edc_top_level_orgs": get_possible_parent_orgs,
             "edc_org_branches": get_organization_branches,
             "edc_org_title": get_organization_title,
             "edc_type_label": edc_type_label,
@@ -137,7 +140,8 @@ class SchemaPlugin(plugins.SingletonPlugin):
             "get_pow_config": get_pow_config,
             "get_package_tracking": get_package_tracking,
             "get_resource_tracking": get_resource_tracking,
-            "log": log_this
+            "log": log_this,
+            "is_current_user_admin": is_current_user_admin
         }
 
     def update_config(self, config):
@@ -421,6 +425,7 @@ class SchemaPlugin(plugins.SingletonPlugin):
         from ckanext.bcgov.logic.auth.ofi import call_action as ofi
         return {
             'package_create': edc_auth_create.package_create,
+            'organization_create': edc_auth_create.organization_create,
             'check_object_name': ofi.check_object_name,
             'file_formats': ofi.file_formats,
             'crs_types': ofi.crs_types,
