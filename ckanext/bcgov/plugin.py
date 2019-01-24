@@ -389,7 +389,7 @@ class SchemaPlugin(plugins.SingletonPlugin):
         facet_dict['organization'] = _('Organizations')
         facet_dict['download_audience'] = _('Download permission')
 
-        if c.userobj and c.userobj.sysadmin:
+        if is_current_user_admin():
             facet_dict['edc_state'] = _('States')
 
         return facet_dict

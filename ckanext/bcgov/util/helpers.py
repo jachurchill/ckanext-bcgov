@@ -364,17 +364,31 @@ def is_current_user_admin():
     context = {'model': model, 'session': model.Session,
                'user': c.user or c.author, 'auth_user_obj': c.userobj}
     user = context['user']
+    org_model = context['model']
 
     user_object = context.get('auth_user_obj')
-
     # Sysadmin user has all the privileges
     if user_object and user_object.sysadmin:
         return True
 
-    if authz.has_user_permission_for_group_or_org('group_id', user, 'admin'):
-        return True
+    top_level_orgs = org_model.Group.get_top_level_groups(type='organization')
+    for top_org in top_level_orgs:
+        if top_org.title == 'BC Data Catalogue':
+            if authz.has_user_permission_for_group_or_org(top_org.id, user, 'admin'):
+                return True
 
     return False
+
+def get_top_level_group():
+    context = {'model': model, 'session': model.Session,
+               'user': c.user or c.author, 'auth_user_obj': c.userobj}
+    org_model = context['model']
+
+    # Get the list of all groups of type "organization" that have no parents.
+    top_level_orgs = org_model.Group.get_top_level_groups(type="organization")
+    for top_org in top_level_orgs:
+        if top_org.title == 'BC Data Catalogue':
+            return top_org
 
 
 def get_possible_parent_orgs():
@@ -388,8 +402,10 @@ def get_possible_parent_orgs():
     # Get the list of all groups of type "organization" that have no parents.
     top_level_orgs = org_model.Group.get_top_level_groups(type="organization")
     for top_org in top_level_orgs:
-        if top_org.name == 'BC Data Catalogue':
-            return top_org.children.insert(0, top_org)
+        if top_org.title == 'BC Data Catalogue':
+            groups = top_org.get_children_groups(type='organization')
+            groups.insert(0, top_org)
+            return groups
 
     return top_level_orgs
 
